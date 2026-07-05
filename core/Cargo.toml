@@ -11,6 +11,7 @@ roaring.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tantivy.workspace = true
+tantivy-jieba.workspace = true
 tempfile.workspace = true
 thiserror.workspace = true
 

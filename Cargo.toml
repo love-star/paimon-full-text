@@ -6,7 +6,7 @@ resolver = "2"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/apache/paimon-full-text"
-rust-version = "1.75"
+rust-version = "1.86"
 
 [workspace.dependencies]
 anyhow = "1"
@@ -14,6 +14,7 @@ jni = "0.21"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 roaring = "0.11"
-tantivy = "0.22"
+tantivy = "0.26"
+tantivy-jieba = "0.20"
 tempfile = "3"
 thiserror = "1"

@@ -30,10 +30,10 @@ Supported tokenizers in this first implementation:
 - `whitespace`
 - `raw`
 - `ngram`
+- `jieba`
 
 Reserved for follow-up:
 
-- `jieba`
 - stemming
 - built-in and custom stop-word filters
 - true seek-on-demand Tantivy directory instead of loading segment files into

@@ -19,6 +19,7 @@ use tantivy::tokenizer::{
     SimpleTokenizer, TextAnalyzer, WhitespaceTokenizer,
 };
 use tantivy::{DocId, DocSet, Index, Score, SegmentReader, TantivyDocument, TERMINATED};
+use tantivy_jieba::JiebaTokenizer;
 use tempfile::TempDir;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -164,11 +165,11 @@ impl<R: SeekRead> FullTextIndexReader<R> {
             let collector = FilterCollector::new(
                 row_id_field,
                 move |row_id: u64| filter.contains(row_id),
-                TopDocs::with_limit(limit),
+                TopDocs::with_limit(limit).order_by_score(),
             );
             searcher.search(&tantivy_query, &collector)?
         } else {
-            searcher.search(&tantivy_query, &TopDocs::with_limit(limit))?
+            searcher.search(&tantivy_query, &TopDocs::with_limit(limit).order_by_score())?
         };
         let mut row_ids = Vec::with_capacity(top_docs.len());
         let mut scores = Vec::with_capacity(top_docs.len());
@@ -238,10 +239,6 @@ fn needs_custom_default(config: &TokenizerConfig) -> bool {
 fn register_tokenizer(index: &mut Index, config: &TokenizerConfig) -> Result<()> {
     match config.tokenizer {
         TokenizerKind::Default if !needs_custom_default(config) => Ok(()),
-        TokenizerKind::Jieba => Err(FtIndexError::InvalidOption {
-            key: "tokenizer".to_string(),
-            message: "jieba tokenizer is not enabled in this first implementation".to_string(),
-        }),
         _ => {
             let analyzer = build_text_analyzer(config)?;
             index
@@ -281,10 +278,9 @@ fn build_text_analyzer(config: &TokenizerConfig) -> Result<TextAnalyzer> {
             TextAnalyzer::builder(tokenizer).dynamic()
         }
         TokenizerKind::Jieba => {
-            return Err(FtIndexError::InvalidOption {
-                key: "tokenizer".to_string(),
-                message: "jieba tokenizer is not enabled in this first implementation".to_string(),
-            })
+            let mut tokenizer = JiebaTokenizer::with_search_mode(config.jieba_search_mode);
+            tokenizer.set_ordinal_position_mode(config.jieba_ordinal_position);
+            TextAnalyzer::builder(tokenizer).dynamic()
         }
     };
     builder = builder.filter_dynamic(RemoveLongFilter::limit(config.max_token_length));

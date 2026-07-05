@@ -24,6 +24,8 @@ fulltext.tokenizer
 fulltext.ngram.min-gram
 fulltext.ngram.max-gram
 fulltext.ngram.prefix-only
+fulltext.jieba.search-mode
+fulltext.jieba.ordinal-position
 fulltext.lower-case
 fulltext.max-token-length
 fulltext.ascii-folding

@@ -106,7 +106,7 @@ Header JSON:
       }
     },
     "document_count": 0,
-    "tantivy_version": "0.22.1"
+    "tantivy_version": "0.26.1"
   },
   "files": [
     {"name": "meta.json", "offset": 0, "length": 1234}
@@ -367,6 +367,8 @@ fulltext.tokenizer
 fulltext.ngram.min-gram
 fulltext.ngram.max-gram
 fulltext.ngram.prefix-only
+fulltext.jieba.search-mode
+fulltext.jieba.ordinal-position
 fulltext.lower-case
 fulltext.max-token-length
 fulltext.ascii-folding
@@ -389,10 +391,10 @@ Supported first implementation tokenizers:
 - `whitespace`
 - `raw`
 - `ngram`
+- `jieba`
 
 Reserved follow-up tokenizers and filters:
 
-- `jieba`
 - stemming
 - built-in stop words
 - custom stop words
@@ -402,6 +404,10 @@ Supported first implementation filters:
 - lowercase
 - max token length
 - ASCII folding
+
+The `jieba` tokenizer uses Tantivy's current external tokenizer API via
+`tantivy-jieba`. Search mode and ordinal token positions are enabled by
+default for Chinese full-text recall and phrase query correctness.
 
 No dynamic Rust tokenizer plugins in v1. They complicate packaging and native
 loading too much for an initial library.

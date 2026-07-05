@@ -1,8 +1,10 @@
 use paimon_ftindex_core::io::{PosWriter, SliceReader};
 use paimon_ftindex_core::{
     FullTextIndexConfig, FullTextIndexReader, FullTextIndexWriter, FullTextQuery, MatchOperator,
+    TokenizerConfig, TokenizerKind,
 };
 use roaring::RoaringTreemap;
+use std::collections::HashMap;
 
 fn build_index() -> anyhow::Result<Vec<u8>> {
     let mut writer = FullTextIndexWriter::new(FullTextIndexConfig::new())?;
@@ -138,6 +140,68 @@ fn phrase_query_uses_positions() -> anyhow::Result<()> {
     let result = reader.search(FullTextQuery::phrase("full text", "text"), 10)?;
 
     assert_eq!(result.row_ids, vec![10]);
+    Ok(())
+}
+
+#[test]
+fn jieba_tokenizer_searches_chinese_terms() -> anyhow::Result<()> {
+    let config = FullTextIndexConfig::new().tokenizer(TokenizerConfig {
+        tokenizer: TokenizerKind::Jieba,
+        ..TokenizerConfig::default()
+    });
+    let mut writer = FullTextIndexWriter::new(config)?;
+    writer.add_document(20, "中华人民共和国人民大会堂")?;
+    writer.add_document(21, "北京大学支持全文检索")?;
+
+    let mut bytes = Vec::new();
+    writer.write(&mut PosWriter::new(&mut bytes))?;
+
+    let mut reader = FullTextIndexReader::open(SliceReader::new(bytes))?;
+    let result = reader.search(FullTextQuery::match_query("中华", "text"), 10)?;
+
+    assert_eq!(result.row_ids, vec![20]);
+    Ok(())
+}
+
+#[test]
+fn jieba_tokenizer_supports_chinese_phrase_queries() -> anyhow::Result<()> {
+    let config = FullTextIndexConfig::new().tokenizer(TokenizerConfig {
+        tokenizer: TokenizerKind::Jieba,
+        jieba_ordinal_position: true,
+        ..TokenizerConfig::default()
+    });
+    let mut writer = FullTextIndexWriter::new(config)?;
+    writer.add_document(30, "北京大学支持全文检索")?;
+    writer.add_document(31, "北京的大学很多")?;
+
+    let mut bytes = Vec::new();
+    writer.write(&mut PosWriter::new(&mut bytes))?;
+
+    let mut reader = FullTextIndexReader::open(SliceReader::new(bytes))?;
+    let result = reader.search(FullTextQuery::phrase("北京大学", "text"), 10)?;
+
+    assert_eq!(result.row_ids, vec![30]);
+    Ok(())
+}
+
+#[test]
+fn tokenizer_options_parse_jieba_settings() -> anyhow::Result<()> {
+    let mut options = HashMap::new();
+    options.insert("fulltext.tokenizer".to_string(), "jieba".to_string());
+    options.insert(
+        "fulltext.jieba.search-mode".to_string(),
+        "false".to_string(),
+    );
+    options.insert(
+        "fulltext.jieba.ordinal-position".to_string(),
+        "false".to_string(),
+    );
+
+    let config = TokenizerConfig::from_options(&options)?;
+
+    assert_eq!(config.tokenizer, TokenizerKind::Jieba);
+    assert!(!config.jieba_search_mode);
+    assert!(!config.jieba_ordinal_position);
     Ok(())
 }
 

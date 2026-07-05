@@ -20,6 +20,8 @@ pub struct TokenizerConfig {
     pub ngram_min_gram: usize,
     pub ngram_max_gram: usize,
     pub ngram_prefix_only: bool,
+    pub jieba_search_mode: bool,
+    pub jieba_ordinal_position: bool,
     pub lower_case: bool,
     pub max_token_length: usize,
     pub ascii_folding: bool,
@@ -37,6 +39,8 @@ impl Default for TokenizerConfig {
             ngram_min_gram: 2,
             ngram_max_gram: 2,
             ngram_prefix_only: false,
+            jieba_search_mode: true,
+            jieba_ordinal_position: true,
             lower_case: true,
             max_token_length: 40,
             ascii_folding: false,
@@ -69,6 +73,12 @@ impl TokenizerConfig {
                 }
                 "ngram.prefix-only" => {
                     config.ngram_prefix_only = parse_bool(key, value)?;
+                }
+                "jieba.search-mode" => {
+                    config.jieba_search_mode = parse_bool(key, value)?;
+                }
+                "jieba.ordinal-position" | "jieba.ordinal-position-mode" => {
+                    config.jieba_ordinal_position = parse_bool(key, value)?;
                 }
                 "lower-case" => {
                     config.lower_case = parse_bool(key, value)?;
