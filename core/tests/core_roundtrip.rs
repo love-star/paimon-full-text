@@ -176,6 +176,39 @@ impl SeekWrite for ChunkLimitedWriter {
     }
 }
 
+struct FailingWriter;
+
+impl SeekWrite for FailingWriter {
+    fn write_all(&mut self, _buf: &[u8]) -> io::Result<()> {
+        Err(io::Error::other("intentional output failure"))
+    }
+}
+
+#[test]
+fn failed_write_attempt_finalizes_writer() -> anyhow::Result<()> {
+    let mut writer = FullTextIndexWriter::new(FullTextIndexConfig::new())?;
+    writer.add_document(1, "Apache Paimon full text")?;
+
+    let write_error = writer
+        .write(&mut FailingWriter)
+        .expect_err("the failing output should reject the first write attempt");
+    assert!(write_error
+        .to_string()
+        .contains("intentional output failure"));
+
+    let mut retry_output = ChunkLimitedWriter::new();
+    let retry_error = writer
+        .write(&mut retry_output)
+        .expect_err("a failed write attempt should still finalize the writer");
+    assert!(retry_error.to_string().contains("already finalized"));
+
+    let add_error = writer
+        .add_document(2, "retry document")
+        .expect_err("a finalized writer should reject additional documents");
+    assert!(add_error.to_string().contains("already finalized"));
+    Ok(())
+}
+
 #[test]
 fn large_incremental_archive_is_streamed_and_searchable() -> anyhow::Result<()> {
     let mut writer = FullTextIndexWriter::new(FullTextIndexConfig::new())?;

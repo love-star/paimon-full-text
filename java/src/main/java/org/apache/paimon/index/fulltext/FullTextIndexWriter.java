@@ -62,6 +62,12 @@ public final class FullTextIndexWriter implements AutoCloseable {
         FullTextNative.addDocumentFields(requireOpen(), rowId, fieldNames, texts);
     }
 
+    /**
+     * Finalizes this writer and streams the index archive to the output.
+     *
+     * <p>Every write attempt finalizes the native writer, even when writing or flushing fails.
+     * Discard a potentially partial output and create a new writer to retry.
+     */
     public void writeIndex(FullTextIndexOutput output) {
         if (output == null) {
             throw new NullPointerException("output");

@@ -144,6 +144,13 @@ impl FullTextIndexWriter {
         Ok(())
     }
 
+    /// Finalizes this writer and streams the completed index archive to `output`.
+    ///
+    /// A write attempt is single-use regardless of whether it succeeds: the active Tantivy writer
+    /// is consumed before commit and serialization begin. After this method is called, subsequent
+    /// calls to `write`, `add_document`, or `add_document_fields` return an already-finalized
+    /// error. If `output` returns an error, it may contain a partial archive and must be discarded;
+    /// retrying requires a new writer and re-adding the documents.
     pub fn write<W: SeekWrite>(&mut self, output: &mut W) -> Result<()> {
         let state = self.state.take().ok_or_else(|| {
             FtIndexError::InvalidStorage("full-text index writer is already finalized".to_string())

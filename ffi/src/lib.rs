@@ -265,6 +265,10 @@ pub unsafe extern "C" fn paimon_ftindex_writer_add_document_fields(
 }
 
 #[no_mangle]
+/// Finalizes the writer and writes its archive to `output`.
+///
+/// The writer is finalized after any call, including calls that return a non-zero status. Callers
+/// must discard a potentially partial output and create a new writer to retry.
 pub unsafe extern "C" fn paimon_ftindex_writer_write_index(
     writer: *mut PaimonFtindexWriterHandle,
     output: PaimonFtindexOutputFile,

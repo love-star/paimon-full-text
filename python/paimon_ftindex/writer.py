@@ -75,6 +75,11 @@ class FullTextIndexWriter:
         )
 
     def write(self, output):
+        """Finalize this writer and stream the index archive to ``output``.
+
+        Every write attempt finalizes the native writer, even when writing or flushing fails.
+        Discard a potentially partial output and create a new writer to retry.
+        """
         if self._closed:
             raise RuntimeError("FullTextIndexWriter is closed")
 
