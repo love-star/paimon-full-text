@@ -29,3 +29,10 @@ allow = [
     # crates (adler32, foldhash). Zlib is ASF Category A (permissive).
     "Zlib",
 ]
+
+[advisories]
+# This is an unmaintained build-time proc-macro dependency pulled in by
+# tantivy-jieba -> jieba-rs -> include-flate. It has no known vulnerability and
+# no patched release. Keep the exception narrow so every new vulnerability
+# advisory fails CI.
+ignore = ["RUSTSEC-2026-0173"]

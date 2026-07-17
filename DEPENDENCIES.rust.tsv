@@ -23,7 +23,7 @@ combine@4.6.7						X
 crc32fast@1.5.0	X					X					
 crossbeam-channel@0.5.15	X					X					
 crossbeam-deque@0.8.6	X					X					
-crossbeam-epoch@0.9.18	X					X					
+crossbeam-epoch@0.9.20	X					X					
 crossbeam-utils@0.8.21	X					X					
 crunchy@0.2.4						X					
 darling@0.23.0						X					

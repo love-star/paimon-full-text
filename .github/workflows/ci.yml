@@ -65,6 +65,9 @@ jobs:
       - name: Check dependency licenses (Apache-compatible)
         run: cargo deny --locked check licenses
 
+      - name: Check Rust security advisories
+        run: cargo deny --locked check advisories
+
       - name: Verify Rust dependency metadata
         run: |
           cargo deny --locked list -f tsv -t 0.6 > /tmp/DEPENDENCIES.rust.tsv
