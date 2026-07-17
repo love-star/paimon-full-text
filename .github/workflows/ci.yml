@@ -62,6 +62,11 @@ jobs:
         with:
           tool: cargo-deny@0.19.0
 
+      - name: Install cargo-about
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about@0.9.1
+
       - name: Check dependency licenses (Apache-compatible)
         run: cargo deny --locked check licenses
 
@@ -72,6 +77,11 @@ jobs:
         run: |
           cargo deny --locked list -f tsv -t 0.6 > /tmp/DEPENDENCIES.rust.tsv
           diff -u DEPENDENCIES.rust.tsv /tmp/DEPENDENCIES.rust.tsv
+
+      - name: Verify artifact-exact license reports
+        run: |
+          cargo fetch --locked
+          python3 tools/generate_license_reports.py --check
 
       - name: Format
         run: cargo fmt --all -- --check
@@ -136,6 +146,22 @@ jobs:
         run: mvn -q -f java/pom.xml test
         env:
           PAIMON_FTINDEX_JNI_LIB_PATH: ${{ github.workspace }}/target/release/libpaimon_ftindex_jni.so
+
+      - name: Verify Java classifier licensing
+        run: |
+          mvn -q -f java/pom.xml clean verify -Prelease -Dgpg.skip=true -DskipTests
+          main_jar="$(find java/target -maxdepth 1 -type f \
+            -name 'paimon-full-text-index-*.jar' \
+            ! -name '*-sources.jar' ! -name '*-javadoc.jar' -print -quit)"
+          sources_jar="$(find java/target -maxdepth 1 -type f \
+            -name 'paimon-full-text-index-*-sources.jar' -print -quit)"
+          javadoc_jar="$(find java/target -maxdepth 1 -type f \
+            -name 'paimon-full-text-index-*-javadoc.jar' -print -quit)"
+          test -n "$main_jar" && test -n "$sources_jar" && test -n "$javadoc_jar"
+          python3 tools/verify_java_jars.py \
+            --main "$main_jar" \
+            --sources "$sources_jar" \
+            --javadoc "$javadoc_jar"
 
   python:
     runs-on: ubuntu-latest

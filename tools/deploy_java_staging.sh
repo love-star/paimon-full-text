@@ -512,6 +512,12 @@ validate_maven_artifacts() {
       exit 1
     fi
   done
+
+  python3 "$REPO_DIR/tools/verify_java_jars.py" \
+    --main "$jar_file" \
+    --sources "$sources_jar" \
+    --javadoc "$javadoc_jar" \
+    --require-all-natives
 }
 
 if [[ "$DRY_RUN" == "true" ]]; then

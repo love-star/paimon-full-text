@@ -29,15 +29,8 @@ license = { text = "Apache-2.0" }
 [project.optional-dependencies]
 test = ["pytest"]
 
+[tool.setuptools]
+include-package-data = false
+
 [tool.setuptools.packages.find]
 include = ["paimon_ftindex*"]
-
-[tool.setuptools.package-data]
-paimon_ftindex = [
-    "libpaimon_ftindex_ffi.dylib",
-    "libpaimon_ftindex_ffi.so",
-    "paimon_ftindex_ffi.dll",
-    "LICENSE",
-    "NOTICE",
-    "DEPENDENCIES.rust.tsv",
-]

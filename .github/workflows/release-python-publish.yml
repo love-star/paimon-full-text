@@ -37,6 +37,8 @@ jobs:
     if: github.repository == 'apache/paimon-full-text' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+
       - uses: actions/download-artifact@v5
         with:
           pattern: wheels-*
@@ -71,46 +73,11 @@ jobs:
             esac
           done
 
-      - name: Verify wheel native libraries
+      - name: Verify wheel contents and legal metadata
         shell: bash
         run: |
           set -euo pipefail
-
-          python - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile
-
-          expected_suffixes = (".so", ".dylib", ".dll")
-          wheels = sorted(Path("dist").glob("*.whl"))
-          if not wheels:
-              raise SystemExit("No wheels found in dist")
-
-          for wheel in wheels:
-              with ZipFile(wheel) as zf:
-                  names = set(zf.namelist())
-              libs = [
-                  name
-                  for name in names
-                  if name.startswith("paimon_ftindex/libpaimon_ftindex_ffi")
-                  or name == "paimon_ftindex/paimon_ftindex_ffi.dll"
-              ]
-              required_metadata = {
-                  "paimon_ftindex/LICENSE",
-                  "paimon_ftindex/NOTICE",
-                  "paimon_ftindex/DEPENDENCIES.rust.tsv",
-              }
-              if not libs:
-                  raise SystemExit(f"{wheel.name} does not contain the native FFI library")
-              if not any(lib.endswith(expected_suffixes) for lib in libs):
-                  raise SystemExit(f"{wheel.name} has unexpected native library names: {libs}")
-              missing_metadata = sorted(required_metadata - names)
-              if missing_metadata:
-                  raise SystemExit(
-                      f"{wheel.name} is missing license metadata: {missing_metadata}"
-                  )
-              if any(name.startswith("tests/") for name in names):
-                  raise SystemExit(f"{wheel.name} unexpectedly contains tests/")
-          PY
+          python3 tools/verify_python_wheels.py dist/*.whl
 
       - name: Publish to TestPyPI
         if: contains(github.ref_name, '-rc')

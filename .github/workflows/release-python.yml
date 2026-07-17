@@ -42,8 +42,10 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: x86_64
+            target: x86_64-unknown-linux-gnu
           - os: ubuntu-24.04-arm
             arch: aarch64
+            target: aarch64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v6
 
@@ -69,6 +71,7 @@ jobs:
           CIBW_BUILD: "cp39-manylinux_${{ matrix.arch }}"
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
+          CIBW_ENVIRONMENT: "PAIMON_FTINDEX_RUST_TARGET=${{ matrix.target }}"
           CIBW_BEFORE_ALL_LINUX: >
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
             source $HOME/.cargo/env &&
@@ -122,6 +125,7 @@ jobs:
       - name: Build wheel
         working-directory: python
         env:
+          PAIMON_FTINDEX_RUST_TARGET: aarch64-apple-darwin
           _PYTHON_HOST_PLATFORM: macosx-11.0-arm64
           ARCHFLAGS: "-arch arm64"
           MACOSX_DEPLOYMENT_TARGET: "11.0"
@@ -174,6 +178,8 @@ jobs:
 
       - name: Build wheel
         working-directory: python
+        env:
+          PAIMON_FTINDEX_RUST_TARGET: x86_64-pc-windows-msvc
         run: python -m build --wheel
 
       - name: Upload wheel

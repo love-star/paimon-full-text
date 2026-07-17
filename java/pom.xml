@@ -65,21 +65,16 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- Used by maven-remote-resources-plugin when generating META-INF/NOTICE. -->
-        <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
+        <!-- Used by maven-remote-resources-plugin when generating META-INF/NOTICE.
+             Keep the timestamp away from a UTC year boundary because version 1.7.0
+             formats it in the build host's local timezone. -->
+        <project.build.outputTimestamp>2026-01-01T12:00:00Z</project.build.outputTimestamp>
     </properties>
 
     <build>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>${project.basedir}/..</directory>
-                <includes>
-                    <include>DEPENDENCIES.rust.tsv</include>
-                </includes>
-                <targetPath>META-INF</targetPath>
             </resource>
         </resources>
         <plugins>
@@ -92,6 +87,66 @@
                     <target>${maven.compiler.target}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-canonical-notice</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <!-- The Apache parent generates NOTICE from a template.
+                                 Replace it with the repository's reviewed NOTICE so
+                                 every main, sources, and javadoc JAR is byte-exact. -->
+                            <outputDirectory>${project.build.directory}/maven-shared-archive-resources/META-INF</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/..</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>NOTICE</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-binary-only-legal-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Run after the Apache parent has generated its generic
+                                 META-INF files. These resources describe the native
+                                 libraries and therefore belong only in the main JAR. -->
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/binary-resources</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                                <resource>
+                                    <!-- target/classes takes precedence over the
+                                         shared archive resources in the main JAR. -->
+                                    <directory>${project.basedir}/..</directory>
+                                    <targetPath>META-INF</targetPath>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>NOTICE</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -136,10 +191,9 @@
                         <artifactId>maven-source-plugin</artifactId>
                         <version>3.3.1</version>
                         <configuration>
-                            <!-- The native libraries are downloaded into
-                                 src/main/resources/native during the release build and belong only
-                                 in the binary jar. Exclude them so the sources jar contains source
-                                 code (and META-INF metadata), not platform binaries. -->
+                            <!-- Binary-only native and legal resources are not Maven
+                                 source roots. Keep the explicit native exclusion as a
+                                 guard for the downloaded release inputs. -->
                             <excludes>
                                 <exclude>native/**</exclude>
                             </excludes>

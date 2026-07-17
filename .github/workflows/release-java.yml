@@ -167,6 +167,21 @@ jobs:
         working-directory: java
         run: mvn clean verify -Prelease -Dgpg.skip=true -DskipTests
 
+      - name: Verify Java artifact licensing
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_jar="$(find java/target -maxdepth 1 -name 'paimon-full-text-index-*.jar' \
+            ! -name '*-sources.jar' ! -name '*-javadoc.jar' -print -quit)"
+          sources_jar="$(find java/target -maxdepth 1 -name '*-sources.jar' -print -quit)"
+          javadoc_jar="$(find java/target -maxdepth 1 -name '*-javadoc.jar' -print -quit)"
+          test -n "$main_jar" && test -n "$sources_jar" && test -n "$javadoc_jar"
+          python3 tools/verify_java_jars.py \
+            --main "$main_jar" \
+            --sources "$sources_jar" \
+            --javadoc "$javadoc_jar" \
+            --require-all-natives
+
       - name: Upload Java package
         uses: actions/upload-artifact@v5
         with:

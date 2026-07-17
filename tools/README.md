@@ -21,6 +21,44 @@
 
 This directory contains helper scripts used by release managers and committers.
 
+## Artifact-specific licensing
+
+The native Java and Python packages use generated, target-specific third-party
+license reports. Install the pinned generator, fetch the locked dependencies,
+and regenerate the reports with:
+
+```bash
+cargo install cargo-about --version 0.9.1 --locked
+cargo fetch --locked
+python3 tools/generate_license_reports.py
+```
+
+CI checks that the committed reports are current:
+
+```bash
+python3 tools/generate_license_reports.py --check
+```
+
+The generator writes one report for each release target. It also includes the
+nested licenses for vendored Zstandard C sources, generated Snowball algorithms,
+Unicode data tables, and the Python Jieba dictionary/HMM data that are compiled
+into the native libraries. It also replaces incomplete registry-package MIT
+templates with the exact Jieba and Tantivy workspace licenses and rejects any
+remaining copyright placeholders. The Java binary JAR contains all target
+reports, while its sources and javadoc classifiers retain the plain Apache
+LICENSE and NOTICE. Each Python wheel selects exactly one target report and
+installs its legal files both in the import package and in the standard
+`.dist-info/licenses/` directory.
+
+Release workflows verify the assembled artifacts with:
+
+```bash
+python3 tools/verify_java_jars.py \
+  --main MAIN.jar --sources SOURCES.jar --javadoc JAVADOC.jar \
+  --require-all-natives
+python3 tools/verify_python_wheels.py dist/*.whl
+```
+
 ## Java staging deploy
 
 `deploy_java_staging.sh` deploys the Java release candidate artifacts to Apache
@@ -168,7 +206,10 @@ It does not sign and does not deploy to Nexus. It verifies:
 - all four native libraries are present;
 - native library file formats match their target platforms;
 - the Java jar, sources jar, and javadoc jar are produced;
-- the Java jar contains all four native library entries.
+- the Java jar contains all four native library entries and all four matching
+  third-party license reports; and
+- the sources and javadoc jars contain only their own Apache legal metadata,
+  without binary-only license declarations.
 
 ### Deploy to Nexus staging
 
